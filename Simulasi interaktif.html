@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🌈🧪 Simulasi Interaktif Hidrolisis Garam | Eksplorasi Kimia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            acid: '#ef4444',
+            base: '#10b981',
+            neutral: '#3b82f6',
+            primary: '#2563eb',
+            secondary: '#7c3aed',
+            accent: '#f59e0b',
+            water: '#bfdbfe',
+            cationNa: '#60a5fa',
+            cationNH4: '#818cf8',
+            anionCl: '#f87171',
+            anionAc: '#a78bfa',
+            hplus: '#f59e0b',
+            ohminus: '#34d399',
+            atomH: '#fecaca',
+            atomO: '#93c5fd',
+            atomC: '#6b7280',
+            atomN: '#c084fc'
+          },
+          animation: {
+            'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'glow': 'glow 1.5s ease-in-out infinite alternate',
+            'bounce': 'bounce 0.8s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            glow: {
+              '0%': { boxShadow: '0 0 5px rgba(59, 130, 246, 0.3)' },
+              '100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(37, 99, 235, 0.4)' },
+            },
+            bounce: {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.05)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, #e0f2fe, #f0e6ff, #fef3c7);
+    }
+    .card-hover {
+      transition: all 0.3s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+      border-radius: 1.5rem;
+    }
+    .card-hover:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+    }
+    .btn-glow {
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-glow::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 20px;
+      height: 200%;
+      background: rgba(255,255,255,0.4);
+      transform: rotate(25deg);
+      transition: all 0.6s;
+    }
+    .btn-glow:hover::after {
+      left: 120%;
+    }
+    #simulation-canvas {
+      background: linear-gradient(135deg, #f0f9ff, #f0f4ff);
+      border-radius: 1.5rem;
+      border: 2px solid #dbeafe;
+      cursor: grab;
+    }
+    #simulation-canvas:active {
+      cursor: grabbing;
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      pointer-events: none;
+      z-index: 100;
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .ph-display {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+      /* Footer */
+        .footer {
+            padding: 40px;
+            background: linear-gradient(135deg, #1e40af, #7c3aed);
+            color: white;
+            text-align: center;
+        }
+    .reaction-flash {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.95;
+      animation: flash 0.8s ease-out forwards;
+    }
+    @keyframes flash {
+      0% { transform: scale(0.2); opacity: 1; }
+      100% { transform: scale(3); opacity: 0; }
+    }
+    .atom-label {
+      position: absolute;
+      font-size: 9px;
+      font-weight: bold;
+      color: white;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.6);
+      transition: all 0.2s;
+    }
+    .legend-item:hover {
+      background: rgba(255,255,255,0.8);
+      transform: translateX(4px);
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .header-glow {
+      background: linear-gradient(90deg, #2563eb, #7c3aed, #f59e0b, #10b981);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 300% 300%;
+      animation: gradientGlow 8s ease infinite;
+    }
+    @keyframes gradientGlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .video-card {
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .video-card.active {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+      transform: scale(1.02);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white shadow-xl py-5 px-6 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 text-sm text-gray-600 mb-1">
+          <a href="index 1.html" class="hover:underline text-primary"><i class="fas fa-home"></i> Home</a>
+          <span>/</span>
+          <a href="Teori dasar 1.html" class="hover:underline text-primary">Teori Dasar</a>
+          <span>/</span>
+          <span class="font-medium">Simulasi</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold header-glow">
+          Simulasi Mekanisme Hidrolisis Garam
+        </h1>
+      </div>
+      <div class="flex gap-4">
+        <a href="Teori dasar 1.html" class="px-5 py-2.5 bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 text-gray-800 rounded-xl font-medium transition-all shadow-md">
+          <i class="fas fa-arrow-left mr-1"></i> Teori Dasar
+        </a>
+        <a href="Perhitungan pH.html" class="px-5 py-2.5 bg-gradient-to-r from-primary to-blue-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-indigo-800 transition-all btn-glow shadow-lg">
+          Perhitungan pH <i class="fas fa-arrow-right ml-1"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <section class="py-10 px-4 pb-24">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
+      
+      <!-- LEFT PANEL: Controls -->
+      <div class="space-y-7">
+        <!-- Salt Type Selector -->
+        <div class="bg-white p-7 rounded-2xl shadow-lg card-hover">
+          <h3 class="font-bold text-xl text-gray-800 mb-5 flex items-center gap-3">
+            <i class="fas fa-flask text-primary"></i> Pilih Jenis Garam
+          </h3>
+          <div class="space-y-4">
+            <label class="flex items-center gap-4 p-4 bg-green-100 rounded-xl cursor-pointer hover:bg-green-200 transition-colors border-l-4 border-green-500">
+              <input type="radio" name="salt" value="weak-acid-strong-base" class="radio-salt w-5 h-5">
+              <div>
+                <span class="font-bold text-green-800">Asam Lemah + Basa Kuat</span><br>
+                <span class="text-sm text-gray-600">(Contoh: CH₃COONa)</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-4 p-4 bg-red-100 rounded-xl cursor-pointer hover:bg-red-200 transition-colors border-l-4 border-red-500">
+              <input type="radio" name="salt" value="strong-acid-weak-base" class="radio-salt w-5 h-5">
+              <div>
+                <span class="font-bold text-red-800">Asam Kuat + Basa Lemah</span><br>
+                <span class="text-sm text-gray-600">(Contoh: NH₄Cl)</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-4 p-4 bg-purple-100 rounded-xl cursor-pointer hover:bg-purple-200 transition-colors border-l-4 border-purple-500">
+              <input type="radio" name="salt" value="weak-acid-weak-base" class="radio-salt w-5 h-5">
+              <div>
+                <span class="font-bold text-purple-800">Asam Lemah + Basa Lemah</span><br>
+                <span class="text-sm text-gray-600">(Contoh: NH₄CH₃COO)</span>
+              </div>
+            </label>
+            <label class="flex items-center gap-4 p-4 bg-blue-100 rounded-xl cursor-pointer hover:bg-blue-200 transition-colors border-l-4 border-blue-500">
+              <input type="radio" name="salt" value="strong-acid-strong-base" class="radio-salt w-5 h-5" checked>
+              <div>
+                <span class="font-bold text-blue-800">Asam Kuat + Basa Kuat</span><br>
+                <span class="text-sm text-gray-600">(Contoh: NaCl — Netral)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Concentration Slider -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+          <h3 class="font-bold text-lg text-gray-800 mb-4">Konsentrasi Garam</h3>
+          <input type="range" id="conc-slider" min="0.01" max="1.00" step="0.01" value="0.10" class="w-full h-3 bg-gradient-to-r from-blue-300 to-blue-500 rounded-lg appearance-none cursor-pointer">
+          <div class="flex justify-between text-sm text-gray-600 mt-2">
+            <span>0.01 M</span>
+            <span id="conc-value" class="font-bold text-primary">0.10 M</span>
+            <span>1.00 M</span>
+          </div>
+        </div>
+
+        <!-- Simulation Controls -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+          <h3 class="font-bold text-lg text-gray-800 mb-4">Kontrol Simulasi</h3>
+          <div class="grid grid-cols-3 gap-3 mb-4">
+            <button id="btn-start" class="py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-bold transition-all shadow-md">
+              <i class="fas fa-play mr-1"></i> Start
+            </button>
+            <button id="btn-pause" class="py-3 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 text-white rounded-xl font-bold transition-all shadow-md">
+              <i class="fas fa-pause mr-1"></i> Pause
+            </button>
+            <button id="btn-reset" class="py-3 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-xl font-bold transition-all shadow-md">
+              <i class="fas fa-redo mr-1"></i> Reset
+            </button>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="text-sm font-medium">Kecepatan:</span>
+            <select id="speed-select" class="border-2 border-gray-200 rounded-lg px-3 py-1.5 text-sm font-medium">
+              <option value="slow">Lambat</option>
+              <option value="medium" selected>Sedang</option>
+              <option value="fast">Cepat</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Results Cards -->
+        <div class="space-y-5">
+          <div class="bg-gradient-to-r from-blue-500 via-indigo-600 to-purple-600 text-white p-6 rounded-2xl card-hover">
+            <h4 class="font-bold text-xl mb-2">pH Larutan</h4>
+            <div id="ph-value" class="ph-display">7.00</div>
+      </div>
+          <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+            <h4 class="font-bold text-gray-800 mb-2">Sifat Larutan</h4>
+            <p id="solution-type" class="text-xl font-bold text-neutral">Netral</p>
+          </div>
+          <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+            <h4 class="font-bold text-gray-800 mb-3">Persamaan Hidrolisis</h4>
+            <p id="reaction-equation" class="font-mono text-sm bg-gray-100 p-3 rounded break-words">Tidak ada reaksi hidrolisis</p>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+          <h4 class="font-bold text-gray-800 mb-4">Legenda Partikel Mikroskopik</h4>
+          <div class="space-y-3">
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: rgba(191, 219, 254, 0.7);"></div>
+              <span>💧 H₂O (Air)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #60a5fa;"></div>
+              <span>⚪ Na⁺ (Natrium)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #818cf8;"></div>
+              <span>🔵 NH₄⁺ (Amonium)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #f87171;"></div>
+              <span>🔴 Cl⁻ (Klorida)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #a78bfa;"></div>
+              <span>🟣 CH₃COO⁻ (Asetat)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #f59e0b;"></div>
+              <span>🟠 H⁺ (Proton)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-color" style="background-color: #34d399;"></div>
+              <span>🟢 OH⁻ (Hidroksida)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Supporting Material -->
+        <div class="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-2xl shadow-lg">
+          <h4 class="font-bold text-gray-800 mb-3">Materi Pendukung</h4>
+          <p class="text-sm text-gray-700 leading-relaxed">
+            Hidrolisis terjadi ketika ion garam bereaksi dengan air. Ion dari asam lemah menghasilkan OH⁻ (basa), 
+            sedangkan ion dari basa lemah menghasilkan H⁺ (asam). pH larutan ditentukan oleh keseimbangan 
+            antara [H⁺] dan [OH⁻] yang dihasilkan selama reaksi.
+          </p>
+          <ul class="mt-3 space-y-2 text-xs text-gray-600 list-disc pl-5">
+            <li><span class="font-medium">Na⁺ & Cl⁻</span>: tidak bereaksi → larutan netral</li>
+            <li><span class="font-medium">CH₃COO⁻</span>: bereaksi dengan H₂O → menghasilkan OH⁻ → basa</li>
+            <li><span class="font-medium">NH₄⁺</span>: bereaksi dengan H₂O → menghasilkan H⁺ → asam</li>
+            <li><span class="font-medium">Kekuatan relatif</span> asam/basa menentukan pH akhir</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL: Visualization -->
+      <div class="space-y-7">
+        <!-- Microscopic Simulation -->
+        <div class="bg-white p-7 rounded-2xl shadow-lg card-hover high-contrast-text">
+          <h3 class="font-bold text-xl mb-5 flex items-center gap-3">
+            <i class="fas fa-microscope text-secondary"></i> Visualisasi Mikroskopik Interaktif
+          </h3>
+          <div class="relative overflow-hidden rounded-xl border-2 border-blue-200">
+            <canvas id="simulation-canvas" width="600" height="520" class="w-full"></canvas>
+            <div id="tooltip" class="tooltip"></div>
+            <div id="reaction-container" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+            <div id="atom-label-container" class="absolute top-0 left-0 w-full h-full pointer-events-none"></div>
+          </div>
+          <div class="mt-5 flex justify-between text-sm font-medium">
+            <span id="collision-counter">Tumbukan: 0</span>
+            <span id="zoom-level">Zoom: 1.0x</span>
+          </div>
+        </div>
+
+        <!-- Educational Videos -->
+        <div class="bg-white p-6 rounded-2xl shadow-lg card-hover">
+          <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-video text-amber-500"></i> Video Edukasi Hidrolisis Garam
+          </h3>
+          <div class="grid grid-cols-1 gap-4">
+            <div class="video-card bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200 active">
+              <h4 class="font-bold text-blue-800 mb-2">🎥 Hidrolisis Netral</h4>
+              <p class="text-sm text-gray-700">Garam dari asam kuat dan basa kuat (NaCl)</p>
+            <div class="mt-3 rounded-lg overflow-hidden aspect-video">
+  <video controls class="w-full h-full">
+    <source src="Animasi Larutan Garam Netral.mp4" type="video/mp4">
+    Browser Anda tidak mendukung pemutaran video.
+  </video>
+</div>
+            </div>
+            <div class="video-card bg-gradient-to-r from-red-50 to-rose-50 p-4 rounded-xl border-2 border-red-200">
+              <h4 class="font-bold text-red-800 mb-2">🎥 Hidrolisis Asam</h4>
+              <p class="text-sm text-gray-700">Garam dari asam kuat dan basa lemah (NH₄Cl)</p>
+             <div class="mt-3 rounded-lg overflow-hidden aspect-video">
+  <video controls class="w-full h-full">
+    <source src="Animasi Larutan Garam Asam.mp4" type="video/mp4">
+    Browser Anda tidak mendukung pemutaran video.
+  </video>
+</div>
+            </div>
+            <div class="video-card bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-200">
+              <h4 class="font-bold text-green-800 mb-2">🎥 Hidrolisis Basa</h4>
+              <p class="text-sm text-gray-700">Garam dari asam lemah dan basa kuat (CH₃COONa)</p>
+             <div class="mt-3 rounded-lg overflow-hidden aspect-video">
+  <video controls class="w-full h-full">
+    <source src="Animasi Larutan Garam Basa.mp4" type="video/mp4">
+    Browser Anda tidak mendukung pemutaran video.
+  </video>
+</div>
+            </div>
+          </div>
+          <button class="mt-5 w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-bold hover:from-amber-600 hover:to-orange-600 transition-all shadow-md">
+            <i class="fas fa-graduation-cap mr-2"></i> Mulai Kuis Singkat
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <i data-lucide="flask-conical" class="footer-icon" size="28"></i>
+            <div>
+                <strong>© 2025 Virtual Chemistry Learning | Hidrolisis Garam</strong><br>
+                Dikembangkan oleh: Putri Ayu Rahmawati – Universitas Negeri Malang
+            </div>
+        </div>
+    </footer>
+
+  <script>
+    // DOM Elements
+    const canvas = document.getElementById('simulation-canvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('tooltip');
+    const reactionContainer = document.getElementById('reaction-container');
+    const atomLabelContainer = document.getElementById('atom-label-container');
+    const phValue = document.getElementById('ph-value');
+    const solutionType = document.getElementById('solution-type');
+    const reactionEquation = document.getElementById('reaction-equation');
+    const concSlider = document.getElementById('conc-slider');
+    const concValue = document.getElementById('conc-value');
+    const collisionCounter = document.getElementById('collision-counter');
+    const zoomLevel = document.getElementById('zoom-level');
+    const speedSelect = document.getElementById('speed-select');
+    const btnStart = document.getElementById('btn-start');
+    const btnPause = document.getElementById('btn-pause');
+    const btnReset = document.getElementById('btn-reset');
+
+    // State
+    let particles = [];
+    let animationId = null;
+    let isRunning = false;
+    let collisionCount = 0;
+    let currentSalt = 'strong-acid-strong-base';
+    let concentration = 0.10;
+    let zoom = 1.0;
+    let offsetX = 0, offsetY = 0;
+    let speedFactor = 1.0;
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+
+    // Particle types with specific colors and labels
+    const PARTICLE_TYPES = {
+      water: { color: 'rgba(191, 219, 254, 0.7)', radius: 8, label: 'H₂O', name: 'Air', atoms: [{x: -3, y: -3, type: 'H'}, {x: 3, y: -3, type: 'H'}, {x: 0, y: 2, type: 'O'}] },
+      cationNa: { color: '#60a5fa', radius: 10, label: 'Na⁺', name: 'Natrium', atoms: [{x: 0, y: 0, type: 'Na'}] },
+      cationNH4: { color: '#818cf8', radius: 11, label: 'NH₄⁺', name: 'Amonium', atoms: [
+        {x: 0, y: 0, type: 'N'},
+        {x: -4, y: -4, type: 'H'},
+        {x: 4, y: -4, type: 'H'},
+        {x: -4, y: 4, type: 'H'},
+        {x: 4, y: 4, type: 'H'}
+      ]},
+      anionCl: { color: '#f87171', radius: 10, label: 'Cl⁻', name: 'Klorida', atoms: [{x: 0, y: 0, type: 'Cl'}] },
+      anionAc: { color: '#a78bfa', radius: 11, label: 'CH₃COO⁻', name: 'Asetat', atoms: [
+        {x: -6, y: 0, type: 'C'},
+        {x: -10, y: -3, type: 'H'},
+        {x: -10, y: 3, type: 'H'},
+        {x: -2, y: 0, type: 'C'},
+        {x: 2, y: -3, type: 'O'},
+        {x: 2, y: 3, type: 'O'}
+      ]},
+      hplus: { color: '#f59e0b', radius: 7, label: 'H⁺', name: 'Proton', atoms: [{x: 0, y: 0, type: 'H'}] },
+      ohminus: { color: '#34d399', radius: 7, label: 'OH⁻', name: 'Hidroksida', atoms: [
+        {x: -2, y: 0, type: 'O'},
+        {x: 2, y: 0, type: 'H'}
+      ]}
+    };
+
+    // Atom colors
+    const ATOM_COLORS = {
+      H: '#fecaca',
+      O: '#93c5fd',
+      C: '#6b7280',
+      N: '#c084fc',
+      Na: '#60a5fa',
+      Cl: '#f87171'
+    };
+
+    // Initialize particles based on salt type
+    function initParticles() {
+      particles = [];
+      const baseCount = Math.floor(35 + concentration * 45);
+      const ionCount = Math.floor(baseCount * 0.28);
+
+      // Add water molecules
+      for (let i = 0; i < baseCount; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 1.6 * speedFactor,
+          vy: (Math.random() - 0.5) * 1.6 * speedFactor,
+          type: 'water',
+          radius: PARTICLE_TYPES.water.radius
+        });
+      }
+
+      // Add ions based on salt type
+      for (let i = 0; i < ionCount; i++) {
+        let cationType, anionType;
+        if (currentSalt === 'weak-acid-strong-base') {
+          cationType = 'cationNa';
+          anionType = 'anionAc';
+        } else if (currentSalt === 'strong-acid-weak-base') {
+          cationType = 'cationNH4';
+          anionType = 'anionCl';
+        } else if (currentSalt === 'weak-acid-weak-base') {
+          cationType = 'cationNH4';
+          anionType = 'anionAc';
+        } else {
+          cationType = 'cationNa';
+          anionType = 'anionCl';
+        }
+
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 1.3 * speedFactor,
+          vy: (Math.random() - 0.5) * 1.3 * speedFactor,
+          type: cationType,
+          radius: PARTICLE_TYPES[cationType].radius
+        });
+
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 1.3 * speedFactor,
+          vy: (Math.random() - 0.5) * 1.3 * speedFactor,
+          type: anionType,
+          radius: PARTICLE_TYPES[anionType].radius
+        });
+      }
+    }
+
+    // Update chemistry results
+    function updateChemistry() {
+      let pH = 7.00;
+      let type = 'Netral';
+      let equation = 'Tidak ada reaksi hidrolisis';
+
+      if (currentSalt === 'weak-acid-strong-base') {
+        pH = 8.72;
+        type = 'Bersifat Basa';
+        equation = 'CH₃COO⁻ + H₂O ⇌ CH₃COOH + OH⁻';
+      } else if (currentSalt === 'strong-acid-weak-base') {
+        pH = 5.28;
+        type = 'Bersifat Asam';
+        equation = 'NH₄⁺ + H₂O ⇌ NH₃ + H₃O⁺';
+      } else if (currentSalt === 'weak-acid-weak-base') {
+        pH = 7.00;
+        type = 'Tergantung Kₐ/K_b';
+        equation = 'NH₄⁺ + CH₃COO⁻ + H₂O ⇌ NH₃ + CH₃COOH';
+      }
+
+      phValue.textContent = pH.toFixed(2);
+      phValue.className = 'ph-display ' + (
+        pH < 7 ? 'text-acid' : pH > 7 ? 'text-base' : 'text-neutral'
+      );
+      solutionType.textContent = type;
+      reactionEquation.textContent = equation;
+    }
+
+    // Draw particles with zoom and pan
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Apply zoom and pan
+      ctx.save();
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(zoom, zoom);
+
+      // Draw background pH overlay
+      if (currentSalt === 'weak-acid-strong-base') {
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else if (currentSalt === 'strong-acid-weak-base') {
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Clear atom labels
+      atomLabelContainer.innerHTML = '';
+
+      // Draw particles
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = PARTICLE_TYPES[p.type].color;
+        ctx.fill();
+        ctx.closePath();
+        
+        // Draw detailed atoms if zoomed in enough
+        if (zoom > 2.0) {
+          const atoms = PARTICLE_TYPES[p.type].atoms;
+          atoms.forEach(atom => {
+            const ax = p.x + atom.x * zoom * 0.35;
+            const ay = p.y + atom.y * zoom * 0.35;
+            const radius = 3.5 * zoom * 0.6;
+            
+            ctx.beginPath();
+            ctx.arc(ax, ay, radius, 0, Math.PI * 2);
+            ctx.fillStyle = ATOM_COLORS[atom.type] || '#6b7280';
+            ctx.fill();
+            ctx.closePath();
+            
+            // Create atom label
+            const label = document.createElement('div');
+            label.className = 'atom-label';
+            label.textContent = atom.type;
+            label.style.left = `${ax * zoom + offsetX}px`;
+            label.style.top = `${ay * zoom + offsetY}px`;
+            atomLabelContainer.appendChild(label);
+          });
+        }
+      });
+
+      ctx.restore();
+    }
+
+    // Create reaction flash effect
+    function createReactionFlash(x, y, isAcid = false) {
+      const flash = document.createElement('div');
+      flash.className = 'reaction-flash';
+      flash.style.left = `${x * zoom + offsetX}px`;
+      flash.style.top = `${y * zoom + offsetY}px`;
+      flash.style.backgroundColor = isAcid ? '#ef4444' : '#10b981';
+      reactionContainer.appendChild(flash);
+      
+      setTimeout(() => {
+        if (flash.parentNode) flash.parentNode.removeChild(flash);
+      }, 800);
+    }
+
+    // Simple collision detection and reaction simulation
+    function detectCollisions() {
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const p1 = particles[i];
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < p1.radius + p2.radius) {
+            // Bounce physics
+            const angle = Math.atan2(dy, dx);
+            const sin = Math.sin(angle);
+            const cos = Math.cos(angle);
+
+            const vx1 = p1.vx * cos + p1.vy * sin;
+            const vy1 = p1.vy * cos - p1.vx * sin;
+            const vx2 = p2.vx * cos + p2.vy * sin;
+            const vy2 = p2.vy * cos - p2.vx * sin;
+
+            p1.vx = vx2 * cos - vy1 * sin;
+            p1.vy = vy1 * cos + vx2 * sin;
+            p2.vx = vx1 * cos - vy2 * sin;
+            p2.vy = vy2 * cos + vx1 * sin;
+
+            collisionCount++;
+
+            // Simulate hydrolysis reaction
+            if (currentSalt === 'weak-acid-strong-base' && p1.type === 'anionAc' && p2.type === 'water') {
+              // Create OH⁻
+              particles.push({
+                x: p1.x,
+                y: p1.y,
+                vx: (Math.random() - 0.5) * 2.2,
+                vy: (Math.random() - 0.5) * 2.2,
+                type: 'ohminus',
+                radius: PARTICLE_TYPES.ohminus.radius
+              });
+              createReactionFlash(p1.x, p1.y, false);
+            } else if (currentSalt === 'strong-acid-weak-base' && p1.type === 'cationNH4' && p2.type === 'water') {
+              // Create H⁺
+              particles.push({
+                x: p1.x,
+                y: p1.y,
+                vx: (Math.random() - 0.5) * 2.2,
+                vy: (Math.random() - 0.5) * 2.2,
+                type: 'hplus',
+                radius: PARTICLE_TYPES.hplus.radius
+              });
+              createReactionFlash(p1.x, p1.y, true);
+            }
+          }
+        }
+      }
+    }
+
+    // Animation loop
+    function animate() {
+      if (!isRunning) return;
+      
+      // Update positions
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        
+        // Bounce off walls
+        if (p.x < p.radius || p.x > canvas.width - p.radius) p.vx *= -1;
+        if (p.y < p.radius || p.y > canvas.height - p.radius) p.vy *= -1;
+      });
+
+      detectCollisions();
+      draw();
+      collisionCounter.textContent = `Tumbukan: ${collisionCount}`;
+      
+      animationId = requestAnimationFrame(animate);
+    }
+
+    // Event Listeners
+    document.querySelectorAll('.radio-salt').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        currentSalt = e.target.value;
+        updateChemistry();
+        initParticles();
+        if (isRunning) {
+          isRunning = false;
+          if (animationId) cancelAnimationFrame(animationId);
+          isRunning = true;
+          animate();
+        }
+      });
+    });
+
+    concSlider.addEventListener('input', () => {
+      concentration = parseFloat(concSlider.value);
+      concValue.textContent = concentration.toFixed(2) + ' M';
+      initParticles();
+    });
+
+    speedSelect.addEventListener('change', () => {
+      speedFactor = speedSelect.value === 'slow' ? 0.5 : speedSelect.value === 'fast' ? 2.0 : 1.0;
+      initParticles();
+    });
+
+    btnStart.addEventListener('click', () => {
+      if (!isRunning) {
+        isRunning = true;
+        animate();
+      }
+    });
+
+    btnPause.addEventListener('click', () => {
+      isRunning = false;
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+
+    btnReset.addEventListener('click', () => {
+      isRunning = false;
+      if (animationId) cancelAnimationFrame(animationId);
+      collisionCount = 0;
+      initParticles();
+      draw();
+      collisionCounter.textContent = 'Tumbukan: 0';
+    });
+
+    // Canvas interaction
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left - offsetX) / zoom;
+      const y = (e.clientY - rect.top - offsetY) / zoom;
+
+      let hovered = null;
+      for (const p of particles) {
+        const dx = p.x - x;
+        const dy = p.y - y;
+        if (Math.sqrt(dx*dx + dy*dy) < p.radius) {
+          hovered = p;
+          break;
+        }
+      }
+
+      if (hovered) {
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 12) + 'px';
+        tooltip.style.top = (e.clientY + 12) + 'px';
+        tooltip.innerHTML = `<strong>${PARTICLE_TYPES[hovered.type].label}</strong><br>${PARTICLE_TYPES[hovered.type].name}`;
+      } else {
+        tooltip.style.display = 'none';
+      }
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomIntensity = 0.12;
+      const wheel = e.deltaY < 0 ? 1 : -1;
+      const zoomFactor = Math.exp(wheel * zoomIntensity);
+      const newZoom = Math.max(0.5, Math.min(zoom * zoomFactor, 4.0));
+      
+      // Adjust offset to zoom towards mouse
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      offsetX = mouseX - (mouseX - offsetX) * (newZoom / zoom);
+      offsetY = mouseY - (mouseY - offsetY) * (newZoom / zoom);
+      
+      zoom = newZoom;
+      zoomLevel.textContent = `Zoom: ${zoom.toFixed(1)}x`;
+      draw();
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      dragStartX = e.clientX - offsetX;
+      dragStartY = e.clientY - offsetY;
+      canvas.style.cursor = 'grabbing';
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        offsetX = e.clientX - dragStartX;
+        offsetY = e.clientY - dragStartY;
+        draw();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+      canvas.style.cursor = 'grab';
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDragging = false;
+      canvas.style.cursor = 'grab';
+    });
+
+    // Video card interaction
+    document.querySelectorAll('.video-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.video-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+      });
+    });
+
+    // Initialize
+    initParticles();
+    draw();
+    updateChemistry();
+  </script>
+
+</body>
+</html>
